@@ -2,7 +2,7 @@ module.exports = {
   title: `A RoyShen blog`,
   description: '',
   head: [
-    ['link', { rel: 'shortcut icon', href:'/favicon.ico' }],
+    ['link', { rel: 'icon', href:'/favicon.ico' }],
     ['meta', { name: 'theme-color', content: '#3eaf7c' }]
   ],
   theme: 'cherry',
@@ -50,8 +50,8 @@ module.exports = {
     ]
   },
   plugins: [
-    // ['@vuepress/google-analytics', {
-    //   ga: 'UA-109153977-1'
-    // }]
+    ['@vuepress/google-analytics', {
+      ga: 'UA-147134043-1'
+    }]
   ]
 }

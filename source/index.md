@@ -3,7 +3,7 @@ title: A RoyShen blog
 home: true
 heroText: A RoyShen blog
 tagline: Any application that can be written in JavaScript, will eventually be written in JavaScript
-footer: MIT Licensed | Copyright © 2019-present RoyShen
+footer: CC BY-NC-ND 4.0 | Copyright © 2019-present RoyShen
 ---
 
 <br />

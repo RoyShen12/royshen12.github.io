@@ -20,7 +20,8 @@ export default {
       verify: false,
       avatar: 'mm',
       meta: ['nick', 'mail'],
-      placeholder: 'Say something'
+      placeholder: 'Say something',
+      path: window.location.pathname
     })
   }
 }

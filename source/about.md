@@ -22,7 +22,7 @@ permalink: '/about/'
 
 ### 关于网站图标
 
-![結城友奈は勇者である](./55394787_p0.jpeg)  
+![結城友奈は勇者である](https://image-bed-roy.oss-cn-shanghai.aliyuncs.com/image-blog/f1a7e26a2ecd271ece638d5115b014c3.jpeg)  
 
 来自我最爱的两部日本深夜动画之一：《结城友奈是勇者》  
   
@@ -36,9 +36,10 @@ permalink: '/about/'
 From [ゆゆゆ香川オンリーサンプル](https://www.pixiv.net/member_illust.php?mode=medium&illust_id=55394787) P1  
 鸣谢 作者 [ミ茶いる/ミチャ](https://www.pixiv.net/member.php?id=84659)
 
-### 关于下阶段计划学习
+### 博客下的其他内容
 
-* React.js
-* Koa.js
+[tower-defense](https://royshen12.github.io/tower-defense/)  
+  
+[particle-system](https://royshen12.github.io/particle-system/)  
 
 <Valine></Valine>

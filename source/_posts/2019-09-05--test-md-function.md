@@ -33,7 +33,7 @@ date: 2019-09-05 09:47:00
 *****
 
 ### 这是本地图片
-![結城友奈は勇者である](../55394787_p0.jpeg)  
+![結城友奈は勇者である](/55394787_p0.jpeg)  
 
 ### 这是外链图片（来自阿里云 OSS 存储）
 ![結城友奈は勇者である](https://image-bed-roy.oss-cn-shanghai.aliyuncs.com/image-blog/f1a7e26a2ecd271ece638d5115b014c3.jpeg)
