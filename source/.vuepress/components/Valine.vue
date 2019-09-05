@@ -1,12 +1,12 @@
 <template>
-  <div id="vcomments"></div>
+  <div id="vcomments" style="margin-top: 2em;"></div>
 </template>
 
 <script>
 export default {
   name: 'Valine',
   mounted() {
-    // require window 
+    // require window
     const Valine = require('valine')
     if (typeof window !== 'undefined') {
       this.window = window
@@ -19,6 +19,7 @@ export default {
       notify: false,
       verify: false,
       avatar: 'mm',
+      meta: ['nick', 'mail'],
       placeholder: 'Say something'
     })
   }
