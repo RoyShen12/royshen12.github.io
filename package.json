@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vuepress dev source --temp .temp",
     "build": "vuepress build source --temp .temp --dest dist",
-    "deploy": "",
+    "deploy": "./deploy.sh",
     "lint": "eslint --ext .js,.vue source",
     "lint:fix": "eslint --fix --ext .js,.vue source",
     "lint-staged": "lint-staged",
