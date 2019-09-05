@@ -7,13 +7,18 @@ permalink: '/about/'
 ### 关于本人
 
 2017 年毕业于某不知名 211 大学计算机科学  
-从事大前端职业  
+  
+从事大前端相关职业  
+  
 吃饭技能：*Vue.js*, *Node.js (Express, Nuxt.js)*  
 热衷：*Javascript*, *Canvas*
 
 ### 关于此博客
 
-由 [VuePress](https://vuepress.vuejs.org/) 驱动，搭配 vuepress-theme-cherry，使用 Markdown 编写内容
+由 [VuePress](https://vuepress.vuejs.org/) 驱动，搭配 vuepress-theme-cherry 主题  
+使用 Markdown 进行内容编写  
+  
+鸣谢 框架和主题作者 [Evan You](https://evanyou.me/) 、[zthxxx](https://github.com/zthxxx)
 
 ### 关于网站图标
 
@@ -35,3 +40,5 @@ From [ゆゆゆ香川オンリーサンプル](https://www.pixiv.net/member_illu
 
 * React.js
 * Koa.js
+
+<Valine></Valine>
