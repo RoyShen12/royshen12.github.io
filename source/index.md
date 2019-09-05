@@ -13,18 +13,6 @@ footer: MIT Licensed | Copyright © 2019-present RoyShen
 自留地  
 分享自己的原创技术文章，偶尔扯点别的  
 
-::: tip 提示
-test 提示区域
-:::
-
-::: warning 警告
-test 警告区域
-:::
-
-::: danger 危险
-test 危险区域
-:::
-
 ### 还没想好
 
 占坑
