@@ -39,6 +39,7 @@
     "markdown-it-ins": "^2.0.0",
     "markdown-it-sub": "^1.0.0",
     "markdown-it-sup": "^1.0.0",
+    "md5": "^2.2.1",
     "vuepress": "latest",
     "vuepress-theme-cherry": "file:source/.vuepress/theme"
   },

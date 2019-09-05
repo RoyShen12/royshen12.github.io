@@ -40,7 +40,7 @@ module.exports = {
     sidebar: false,
   },
   markdown: {
-    lineNumbers: true,
+    lineNumbers: false,
     plugins: [
       'abbr',
       'footnote',
