@@ -10,7 +10,7 @@ footer: CC BY-NC-ND 4.0 | Copyright © 2019-present RoyShen
 
 ### what is it
 
-自留地, 分享自己的原创技术文章，偶尔扯点别的  
+自留地，分享自己的原创技术文章，偶尔扯点别的  
 
 
 <ParticleSystem />

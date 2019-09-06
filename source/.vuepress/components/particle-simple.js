@@ -1,4 +1,4 @@
-function random(lower, upper) {
+export function random(lower, upper) {
   return lower + (upper - lower) * Math.random()
 }
 function standardNormalDistribution() {

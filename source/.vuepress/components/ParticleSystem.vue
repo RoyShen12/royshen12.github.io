@@ -6,12 +6,15 @@
 
 <script>
 import {
+  random,
   Color,
   Vector2,
   Particle,
   ParticleSystem,
   ChamberBox
 } from './particle-simple'
+
+import throttle from 'lodash/throttle'
 
 export default {
   name: 'ParticleSystem',
@@ -28,6 +31,20 @@ export default {
     canvasElem.style.height = height + 'px'
     canvasElem.width = width * dpi
     canvasElem.height = height * dpi
+
+    canvasElem.onmousemove = throttle(e => {
+      const { offsetX, offsetY } = e
+      // console.log(offsetX, offsetY)
+
+      PS.emit(
+        new Particle(
+          new Vector2(offsetX, offsetY),
+          new Vector2(random(-10, 10), random(-200, -100)),
+          Color.random(),
+          random(10, 100)
+        )
+      )
+    }, 20)
 
     const CTX = hasAdvancedCanvas ? canvasElem.getContext('bitmaprenderer') : canvasElem.getContext('2d')
 
