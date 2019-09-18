@@ -1,4 +1,6 @@
 module.exports = {
+  port: 8082,
+
   title: `A RoyShen blog`,
   description: '',
   head: [
@@ -52,6 +54,14 @@ module.exports = {
   plugins: [
     ['@vuepress/google-analytics', {
       ga: 'UA-147134043-1'
-    }]
+    }],
+    ['mathjax', {
+      target: 'svg',
+      macros: {
+        '*': '\\times',
+        '\\Z': '\\mathbb{Z}'
+      }
+    }],
+    'nprogress'
   ]
 }

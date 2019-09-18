@@ -22,7 +22,7 @@ function NormalDistribution(off, con) {
 }
 
 export class ChamberBox {
-  constructor(x1 = 0, y1 = 0, x2, y2, elasticCoefficient) {
+  constructor(x1, y1, x2, y2, elasticCoefficient) {
     elasticCoefficient = elasticCoefficient || 1
     this.apply = particle => {
       if (particle.position.x - particle.radius < x1 || particle.position.x + particle.radius > x2) {
@@ -31,6 +31,34 @@ export class ChamberBox {
       if (particle.position.y - particle.radius < y1 || particle.position.y + particle.radius > y2) {
         particle.velocity.y = -1 * elasticCoefficient * particle.velocity.y
       }
+    }
+  }
+}
+
+export class LoopWorld {
+  constructor(x1, y1, x2, y2) {
+    this.apply = particle => {
+      if (particle.position.x - particle.radius < x1) {
+        particle.position.x = x2 - particle.radius
+      }
+      else if (particle.position.x + particle.radius > x2) {
+        particle.position.x = x1 + particle.radius
+      }
+
+      if (particle.position.y - particle.radius < y1) {
+        particle.position.y = y2 - particle.radius
+      }
+      else if (particle.position.y + particle.radius > y2) {
+        particle.position.y = y1 + particle.radius
+      }
+    }
+  }
+}
+
+export class Gravity {
+  constructor(dt, G = new Vector2(0, 98)) {
+    this.apply = particle => {
+      particle.velocity = particle.velocity.add(G.multiply(dt))
     }
   }
 }
@@ -63,6 +91,9 @@ export class Vector2 {
     const u = new Vector2(x, y)
     const dvd = u.length()
     return u.divide(dvd)
+  }
+  static isNaV(vec) {
+    return isNaN(vec.x) || isNaN(vec.y)
   }
   constructor (x, y) {
     this.x = x
@@ -101,10 +132,10 @@ export class Particle {
     return Math.pow(a.position.x - b.position.x, 2) + Math.pow(a.position.y - b.position.y, 2)
   }
   static massToRadius(mass) {
-    return Math.pow(mass, 1 / 15)
+    return Math.pow(mass, 1 / 12)
   }
   static RocheLimitPow2(a, b) {
-    return Math.pow(a.radius + b.radius, 2)
+    return Math.pow((a.radius + b.radius) * 0.88, 2)
   }
   constructor(position, velocity, color, mass, stasis = false, obWidth = 960, obHeight = 960) {
     this.position = position
@@ -141,37 +172,44 @@ export class Particle {
 
 export class ParticleSystem {
   static G = 6.67408e-3
+  static RenderStyle = {
+    PointCloud: 1,
+    Triangle: 2,
+    next(now) {
+      if (now < 2) return now + 1
+      else return 1
+    }
+  }
+  /**
+   * @param {CanvasRenderingContext2D} ctx 
+   */
   constructor(ctx, w, h) {
     this.w = w
     this.h = h
     this.workers = []
+    /** @type {Particle[]} */
     this.particles = []
     this.context = ctx
     this.pauseSignal = false
-    this.inner_p_count = 0
-    this.pCount = 0
     this.effectors = []
+    this.renderStyle = ParticleSystem.RenderStyle.PointCloud
   }
 
-  get pCount() {
-    return this.inner_p_count
-  }
-  set pCount(v) {
-    this.inner_p_count = v
+  switchRenderStyle() {
+    this.renderStyle = ParticleSystem.RenderStyle.next(this.renderStyle)
   }
 
   emit(particle) {
     this.particles.push(particle)
-    ++this.pCount
   }
-  emitMess(count) {
+  emitMess(count, centerMass) {
     const __width = this.w
     const __height = this.h
 
     const O = new Vector2(__width / 2, __height / 2)
     const R = Math.min(__height, __width) / 2 - 50
 
-    const ct = new Particle(O, Vector2.zero, Color.red, 10 * count, true)
+    const ct = new Particle(O, Vector2.zero, Color.red, centerMass, true)
     ct.visible = false
     this.emit(ct)
 
@@ -189,11 +227,12 @@ export class ParticleSystem {
   }
 
   remove(index) {
-    if (!this.particles[index].dead) {
+    if (!this.particles[index] || !this.particles[index].dead) {
       return
     }
-    this.particles.splice(index, 1)
-    --this.pCount
+    // this.particles.splice(index, 1)
+    this.particles[index] = this.particles[this.particles.length - 1]
+    this.particles.pop()
   }
 
   kinematics(dt) {
@@ -271,15 +310,54 @@ export class ParticleSystem {
   }
 
   render() {
-    // this.context.clearRect(0, 0, this.w, this.h)
+    switch (this.renderStyle) {
+      case ParticleSystem.RenderStyle.PointCloud: this.renderPoint()
+      break
+      case ParticleSystem.RenderStyle.Triangle: this.renderTriangle()
+      break
+      default:
+      break
+    }
+  }
+
+  renderPoint() {
 
     for (const p of this.particles) {
 
       if (p.outOfScreen() || !p.visible) continue
 
       this.context.fillStyle = p.color.toRgba(1)
+
       this.context.beginPath()
       this.context.arc(p.position.x, p.position.y, p.radius, 0, Math.PI * 2, true)
+      this.context.closePath()
+      this.context.fill()
+    }
+  }
+
+  renderTriangle() {
+    const usedBox = new Set()
+
+    for (const p of this.particles) {
+      if (usedBox.has(p)) continue
+
+      usedBox.add(p)
+
+      const canChoose = this.particles.filter(ap => ap !== p && !usedBox.has(ap))
+      if (canChoose.length < 2) continue
+
+      canChoose.sort((pa, pb) => Particle.distancePow2(p, pa) - Particle.distancePow2(p, pb))
+
+      // canChoose.forEach(ppp => console.log(Particle.distancePow2(p, ppp)))
+      const [bro1, bro2] = canChoose
+      usedBox.add(bro1)
+      usedBox.add(bro2)
+
+      this.context.fillStyle = p.color.toRgba(.3)
+      this.context.beginPath()
+      this.context.moveTo(p.position.x, p.position.y)
+      this.context.lineTo(bro1.position.x, bro1.position.y)
+      this.context.lineTo(bro2.position.x, bro2.position.y)
       this.context.closePath()
       this.context.fill()
     }

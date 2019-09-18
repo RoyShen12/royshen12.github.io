@@ -58,7 +58,7 @@ date: 2019-09-05 09:47:00
 
 `console.log("单行代码内容")`
 
-```ts
+``` ts
 type TypedArray =
   | Int8Array
   | Uint8Array
@@ -71,7 +71,7 @@ type TypedArray =
   | Float64Array
 ```
 
-```js
+``` js
 cFx = new Proxy(cFx, {
   apply(target, thisArg, argumentsList) {
     const return_value = Reflect.apply(target, thisArg, argumentsList)
@@ -84,7 +84,7 @@ cFx = new Proxy(cFx, {
 })
 ```
 
-```cpp
+``` cpp
 const auto loop = [this](int value, int ri, int ci) {
   if (value == 0) {
     auto r = this->get_lack(LackType::row, ri);
