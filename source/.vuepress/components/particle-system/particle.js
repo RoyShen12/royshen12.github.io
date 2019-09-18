@@ -42,18 +42,25 @@ export default class Particle {
     return this.position.x + this.radius < 0 || this.position - this.radius > this.obWidth ||
       this.y + this.radius < 0 || this.y - this.radius > this.obHeight
   }
-  /**
-   * 
-   * @param {CanvasRenderingContext2D} ctx 
-   */
+
   render(ctx) {
-    // if (this.outOfScreen() || !this.visible) continue
     ctx.fillStyle = this.color.toRgba(1)
 
     ctx.beginPath()
     ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2, true)
     ctx.closePath()
     ctx.fill()
+  }
+
+  complexRender(ctx) {
+
+    for (let i = 1; i <= Math.ceil(this.radius * 2); i += 1) {
+      ctx.beginPath()
+      ctx.arc(this.position.x, this.position.y, i, 0, Math.PI * 2)
+      ctx.closePath()
+      ctx.strokeStyle = this.color.toRgba(Math.random())
+      ctx.stroke()
+    }
   }
 
   renderPath() {

@@ -12,10 +12,10 @@ sidebar: auto
 本文将介绍简单的运动学模拟，以及如何使用 Canvas 实现一个符合直觉的，遵循现实世界物理规则的粒子系统。  
 
 本文将假设读者了解：
-1. 基本的 Canvas fill, stroke, arc 等绘图函数
+1. 基本的 Canvas 绘图函数
 2. ES6 语法
 
-##  理论基础
+## 理论基础
 
 设物体在任意时间 t 具有状态：位置 $r(t)$，速度 $v(t)$，加速度 $a(t)$，质量 $m$，合外力 $F(t)$。  
 
@@ -112,8 +112,8 @@ class Particle {
   }
 }
 ```
-可以看到，粒子由**位置**，**速度**，**颜色**和**质量**这四个基本要素构成。  
-位置和速度都是 Vector2 类型，颜色的类型是帮助类 [Color](#source-code-color)（见附录）。  
+可以看到，粒子由**位置**，**速度**，**颜色**和**质量**这四个基本要素以及**内秉的加速度**构成。  
+位置和速度都是 Vector2 类型，颜色的类型是帮助类 [Color](#其他帮助类)（见附录）。  
 
 Particle 的半径由它的质量通过如下方式计算而出：
 $$R = \sqrt[12]{m}$$
@@ -136,7 +136,7 @@ Particle.distancePow2 = function (a, b) { // 计算两个粒子的欧几里得�
 
 因为加速度可以由合外力和质量简单计算得出，我们考虑最简单的加速度速度模型：单个粒子不受外力的情况。  
 
-设我们拥有粒子 `p = new Particle(vec1, vec2, color, mass)` ，时间间隔量 `dt`，具有加速度 `acceleration`  
+设我们拥有粒子 `p = new Particle(...)` ，时间间隔量 `dt`，具有外部加速度 `acceleration`  
 
 根据上文的公式，我们可以得出两条具体的表达式：
 ``` js
@@ -153,22 +153,28 @@ p.velocity = p.velocity.add( acceleration.multiply(dt) )
 
 有了上面这两条核心的运动逻辑，现在我们只差让粒子动起来的 **画布** 了。  
 
-我们所说的画布是一个 **CanvasRenderingContext2D** 类型的对象，通常我们用 `ctx` 来命名它  
+我们所说的画布是一个 **CanvasRenderingContext2D** 类型的对象，通常我们用 `ctx` 来命名它。  
 画布依赖于它所属的支撑的元素：**HTMLCanvasElement** 类型的对象，通常被命名为 `canvas` 或 `canvasEle`，前者通过后者原型上的方法`getContext`得到（参数必须是`'2d'`）。  
 
 ::: tip
 在大多数现代浏览器，尤其是 Chrome 中，Canvas 拥有其他方式无法匹敌的渲染速度和 GPU 加速能力，但是由于 Canvas 较为低级的 API 设计，想用 Canvas 画出像样的东西需要做的准备工作相对要多了那么些。
 :::
 
-一个形如 `<canvas></canvas>` 的闭合标签或 `document.createElement('CANVAS')` 的返回值便是一个 **HTMLCanvasElement** 的实例，在本文的所有实验中，画布元素都是来自一个 `<canvas>` 标签，画布来自对元素的引用调用 `getContext('2d')`。  
+一个形如 `<canvas></canvas>` 的闭合标签或 `document.createElement('canvas')` 的返回值便是一个 **HTMLCanvasElement** 的实例，在本文的所有实验中，画布元素都是来自一个 `<canvas>` 标签，画布来自对元素的引用调用 `getContext('2d')`。  
 
 通常画布元素 `canvasEle` 都是以 Html 标签的形式存在于文档流中，这样一来，我们对它的画布 `ctx` 的所有更新、操作都会实时地被浏览器实时呈现到你的显示器上。  
 
-有些情况下，它也可以在某些时候动态地使用 `document.createElement('CANVAS')` 创建而不挂载到文档中，这样的仅存活在内存中的 `canvasEle` 可以帮助解决一些特殊的问题，比如转换图片为 base64 编码，或者给另一个 `ctx` 加速。  
+::: tip
+本文中的所有画布在创建时都会读取 `window.devicePixelRatio` 并对画布进行缩放  
+在 `devicePixelRatio` 为 2 的设备上，宽高都为 400 的 canvas ，实际内部的画布尺寸是 800 * 800。  
+如不做处理，视网膜屏和移动设备上的 canvas 将会一片模糊。
+:::
+
+有些情况下，它也可以在某些时候动态地使用 `document.createElement('canvas')` 创建而不挂载到文档中，这样的仅存活在内存中的 `canvasEle` 可以帮助解决一些特殊的问题，比如转换图片为 base64 编码，或者给另一个 `ctx` 加速。  
 
 Canvas 具有很多基本的绘图、变换、图像处理和像素控制方法，我们将仅用到 `beginPath`, `arc`, `closePath`, `fill` 这几个函数，以及 `fillStyle` 这个属性。  
 
-#### beginPath 和 closePath
+### beginPath 和 closePath
 
 ``` ts
 void ctx.beginPath()
@@ -182,7 +188,7 @@ void ctx.closePath()
 它尝试从当前点到起始点绘制一条直线。  
 如果图形已经是封闭的或者只有一个点，那么此方法不会做任何操作。
 
-#### arc
+### arc
 
 ``` ts
 void ctx.arc(
@@ -196,7 +202,7 @@ void ctx.arc(
 >`arc` 是 Canvas 2D API 绘制**圆弧路径**的方法。  
 **圆弧路径**的圆心在 $<x, y>$ 位置，半径为 $r$ ，根据 *anticlockwise*（默认为顺时针）指定的方向从 *startAngle* 开始绘制，到 *endAngle* 结束。
 
-#### fill 和 fillStyle
+### fill 和 fillStyle
 
 ``` ts
 void ctx.fill()
@@ -257,7 +263,7 @@ ctx.strokeStyle = p.color.toReversedRgba(1)\n
 
 当粒子的数量超过 1 个，情况就会变得复杂起来：目前为止我们都没有考虑粒子受力的情况。  
 
-#### 万有引力的理论基础
+### 万有引力的理论基础
 
 设两个质点的质量分别为 $m1$, $m2$，并且在它们之间的距离为 $r$，则它们之间的万有引力 $F$ 为：
 
@@ -265,7 +271,7 @@ $$F = G \dfrac {m_{1}m_{2}}{r^{2}}$$
 
 其中，$G$ 是万有引力常数，约为 $6.67408 \cdot 10^{-11} \dfrac {m^{3}}{kg \cdot s^{2}}$
 
-#### 引力的简化和计算
+### 引力的简化和计算
 
 为了适应我们创建的模型，现实中的一些常数需要在计算机系统中适当地缩放，先前我们在通过粒子的质量计算粒子的体积时已经使用了这样的方法。  
 现实生活中我们很难察觉引力的作用，因为它太小了，为了使得引力的效应变得清晰可见，我们必须让万有引力常数变得足够大：  
@@ -293,7 +299,7 @@ function F_Gravitation(p1, p2) {
 }
 ```
 
-#### 引力和加速度
+### 引力和加速度
 
 现在，粒子受到了外力，它将由外力产生**动态**的加速度，而不是提前预设的**固定**加速度，我们现在来讨论引力环境下粒子的加速度的计算。  
 
@@ -339,10 +345,11 @@ p.acceleration = totalGravitation
 有了计算引力的公式，我们就可以在下面的实验里直观地观察引力了！  
 
 <CanvasPlayground
-desc="（这是一个带初速度的轻粒子被静止的重粒子吸引的例子，尝试修改初速度、质量或起始位置，观察变化）"
+desc="（这是一个带初速度的轻粒子被静止的重粒子吸引的例子，尝试修改 G 、初速度、质量或起始位置，观察变化）"
 desc2="* gf 是工具函数，即上面的p的加速度计算方法，gf 依赖外部的 particles"
-env="const G=6.67408;function gf(p){const totalGravitation=particles.reduce((pv,cv)=\\r{if(p===cv){return pv}else{const gravAcc=G*cv.mass/Particle.distancePow2(p,cv);const gravVec=Vector2.unit(cv.position.x-p.position.x,cv.position.y-p.position.y).multiply(gravAcc);return pv.add(gravVec)}},Vector2.zero);p.acceleration=totalGravitation}"
-js="const particles = [
+env="function gf(p){const totalGravitation=particles.reduce((pv,cv)=\\r{if(p===cv){return pv}else{const gravAcc=G*cv.mass/Particle.distancePow2(p,cv);const gravVec=Vector2.unit(cv.position.x-p.position.x,cv.position.y-p.position.y).multiply(gravAcc);return pv.add(gravVec)}},Vector2.zero);p.acceleration=totalGravitation}"
+js="const G = 6.67408
+const particles = [
   new Particle(new Vector2(200, 180), new Vector2(0, 0), new Color(22, 33, 234), 1000),
   new Particle(new Vector2(25, 200), new Vector2(0, -4), new Color(234, 42, 12), 100),
   new Particle(new Vector2(125, 140), new Vector2(0, -6), new Color(194, 22, 242), 100)
@@ -363,12 +370,34 @@ const dt = 0.1\n
 
 思考上文介绍的粒子的万有引力计算方法，不难发现有一种情况需要考虑：  
 当两个粒子特别靠近时，$\overrightarrow {F_{G}}$ 将变得非常大，表现为两个粒子相互靠近，并以极快的速度弹出。  
-在上面的实验中释放两个初速度为 0 的粒子便可观察到这一现象。  
+在下面的实验中释放两个初速度为 0 的粒子便可观察到这一现象。
+
+<CanvasPlayground
+noEdit
+env="const G=6.67408;function gf(p){const totalGravitation=particles.reduce((pv,cv)=\\r{if(p===cv){return pv}else{const gravAcc=G*cv.mass/Particle.distancePow2(p,cv);const gravVec=Vector2.unit(cv.position.x-p.position.x,cv.position.y-p.position.y).multiply(gravAcc);return pv.add(gravVec)}},Vector2.zero);p.acceleration=totalGravitation;}"
+js="const particles = [
+  new Particle(new Vector2(200, 200), new Vector2(0, 0), new Color(22, 33, 234), 100000),
+  new Particle(new Vector2(125, 125), new Vector2(0, 0), new Color(234, 42, 12), 100)
+]
+const dt = 0.05\n
+!(function loop() {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  particles.forEach(p =\\r {
+    gf(p)
+    p.position = p.position.add( p.velocity.multiply(dt) )
+    p.velocity = p.velocity.add( p.acceleration.multiply(dt) )
+    p.render(ctx)
+  })
+  hdl = requestAnimationFrame(loop)
+}())"></CanvasPlayground>
+
 为了避免这种情况的发生，我们必须引入碰撞检测以及碰撞后的处理。  
+
+### 碰撞的定义
 
 我们规定一个**最小距离**，当两个粒子的距离小于它们的**最小距离**，则我们认为发生了碰撞。
 
-在此我们模仿天体物理中的[*洛希极限*](https://zh.wikipedia.org/wiki/%E6%B4%9B%E5%B8%8C%E6%A5%B5%E9%99%90)定义本文中的**粒子间的洛希极限** $d$：
+在此我们模仿天体物理中的[ *洛希极限* ](https://zh.wikipedia.org/wiki/%E6%B4%9B%E5%B8%8C%E6%A5%B5%E9%99%90)定义本文中的**粒子间的洛希极限** $d$：
 
 $$d = 1.0134\left( r_{1}+r_{2}\right)$$
 
@@ -384,10 +413,12 @@ Particle.RocheLimitPow2 = function (a, b) {
 
 碰撞的检测方式是对粒子进行简单的二次遍历。  
 ::: tip
-由于在某些情况下粒子会超出画布范围，但我们仍需要对其进行模拟，所以在此我们不会使用*四叉树*法进行碰撞检测。
+由于在某些情况下粒子会超出画布范围，但我们仍需要对其进行模拟，所以在此我们不会使用 *四叉树* 法进行碰撞检测。
 :::
 举例说明，设第一层遍历到 `p` ，第二层遍历到 `pOther` 时：  
 当 `Particle.distancePow2(p, pOther) < Particle.RocheLimitPow2(p, pOther)` 时，变认为碰撞发生。  
+
+### 碰撞后的处理
 
 一般情况下，计算机粒子模拟时会有以下几种碰撞时的处理：
 
@@ -447,12 +478,19 @@ class Particle {
 class ParticleSystem {
   static G = 6.67408
   constructor(ctx, w, h) {
-    this.w = w || ctx.canvas.width
-    this.h = h || ctx.canvas.height
+    this.w = w || ctx.canvas.width / window.devicePixelRatio
+    this.h = h || ctx.canvas.height / window.devicePixelRatio
     this.particles = []
     this.context = ctx
-    this.pauseSignal = false
     this.effectors = []
+
+    this.pauseSignal = false // 暂停信号
+    this.disableDevour = false // 禁用碰撞
+    this.disableGravitation = false // 禁用引力
+
+    // 渲染耗时记录
+    this.lastRenderTime = new Float64Array(512)
+    this.renderInterval = 0
   }
   simulate(dt) {
     if (this.pauseSignal) return
@@ -471,7 +509,10 @@ class ParticleSystem {
 }
 ```
 
-上述的代码创建了粒子系统的基础框架，构造函数接受 1 个或 3 个参数，**CanvasRenderingContext2D** 类型的 `ctx` 是粒子系统依赖的渲染上下文，`w` 和 `h` 是粒子的宽高范围，如果未指定则取 `ctx` 的宽高，目前未使用到。  
+上述的代码创建了粒子系统的基础框架，构造函数接受 1 个或 3 个参数，**CanvasRenderingContext2D** 类型的 `ctx` 是粒子系统依赖的渲染上下文，`w` 和 `h` 是粒子的宽高范围，如果未指定则取 `ctx` 的**逻辑**宽高，目前未使用到。  
+
+### 核心逻辑
+
 `render` 方法完成一次全体粒子的绘制。  
 ::: warning
 `render` 没有主动刷新 `ctx` ，如果不在外部使用 `ctx.clearRect` 方法刷新画布则会出现重影。  
@@ -479,7 +520,7 @@ class ParticleSystem {
 :::
 `simulate` 方法完成一次全体粒子的运动及其他模拟和操作，参数 `dt` 为时间间隔量，内部涉及了 4 个方法，我们逐一分析：
 
-#### applyEffectors
+### applyEffectors
 
 ``` js
 applyEffectors() {
@@ -493,7 +534,7 @@ applyEffectors() {
 `effectors` 是一个用于存放效果插件的容器，每个插件都有 `apply` 方法，其接收一个参数 `p: Particle`。  
 方法将遍历所有插件，并将效果应用到每个粒子上。
 
-#### devour
+### devour
 
 ``` js
 devour() {
@@ -524,7 +565,7 @@ devour() {
 
 `devour` 方法先将所有粒子按照**质量**排序，从最重的开始循环，在下一层循环中寻找可以吸收的轻粒子，标记它们并使用前述的 `devourOther` 方法吸收。
 
-#### universalGravitation
+### universalGravitation
 
 ``` js
 universalGravitation() {
@@ -547,7 +588,7 @@ universalGravitation() {
 
 `universalGravitation` 方法对每个粒子应用[这里](#引力和加速度)给出的算法计算引力下的加速度。
 
-#### kinematics
+### kinematics
 
 ``` js
 kinematics(dt) {
@@ -592,7 +633,6 @@ remove(index) {
 <CanvasPlayground
 desc="（这是一个完整的粒子系统的例子，可以看到每次绘图前会手动清空画布，尝试注释 ctx.clearRect... ，观察变化）"
 desc2="* random 是随机数产生器，接受两个参数：上界和下界"
-env="function random(lower,upper){return lower+(upper-lower)*Math.random();}"
 js="const ps = new ParticleSystem(ctx)\n
 for (let i = 0; i < 100; i++) {
   ps.emit(new Particle(
@@ -672,10 +712,10 @@ const Gravity = new Field(0.01, () => new Vector2(0, 9.8))
 现在我们在上一个例子中加入 `ChamberBox` 和 `Field`，看看效果吧！
 
 <CanvasPlayground
-env="function random(lower,upper){return lower+(upper-lower)*Math.random();}"
+desc="（尝试修改 ChamberBox 的弹性系数，观察变化）"
 js="const ps = new ParticleSystem(ctx), dt = 0.01
 ps.effectors.push(new Field(dt, () =\\r new Vector2(0, 98 /* 此处使用了较大的值 */)))
-ps.effectors.push(new ChamberBox(0, 0, ps.w, ps.h))\n
+ps.effectors.push(new ChamberBox(0, 0, ps.w, ps.h, 1))\n
 for (let i = 0; i < 300; i++) {
   ps.emit(new Particle(
     new Vector2( random(0, ps.w), random(0, ps.h) ),
@@ -691,3 +731,120 @@ for (let i = 0; i < 300; i++) {
   hdl = requestAnimationFrame(loop)
 }())"></CanvasPlayground>
 
+## 离屏渲染
+
+作为本文的最后一部分，这里将介绍一种常用的性能优化手段：**离屏渲染**，实际上属于**双缓冲**这样一种古老而实用的优化方法。  
+
+通过将原先零碎的 Canvas 操作集中到一块内存中的不可见画布，即**离屏画布**上，再于每一帧刷新之际将离屏画布的内容或移动，或复制到主画布上，完成渲染。  
+在各种性能测试中，只要绘图任务稍多，使用离屏渲染的情况下帧数就会得到非常明显的提高。  
+
+我们将介绍两种离屏渲染的环境，一种适合仅面向最新的浏览器的情况，一种适合适配大多数主流浏览器的情况：
+
+目前最新也是最高效的做法是使用浏览器提供的 API `OffscreenCanvas` 来完成离屏环境的创建。  
+遗憾的是除了 Chrome 外，其他浏览器对其的支持参差不齐，部分浏览器中的 `OffscreenCanvas` 仅可以创建用于 *WebGL* 的画布，另一些浏览器甚至根本没有这个 API。  
+除此以外，还需要从 `HTMLCanvasElement` 创建 `ImageBitmapRenderingContext` 并用作主画布。  
+
+如果用这样的方式渲染，在每帧的绘图都收集到离屏画布后，主画布会直接从离屏画布**移动**走其中的内容（以**ImageBitmap**）的方式，并呈现到显示设备。  
+这样的方式避免了一次繁重的图像拷贝，并且因为 ImageBitmap 是一种 **GPU** 资源，绘图的速度也被缩短。
+
+::: tip
+Firefox 可以通过在 *about:config* 将 gfx.offscreencanvas.enabled 选项设置为 true 开启 `OffscreenCanvas`，但其仍然只支持 WebGL。
+:::
+
+::: tip
+Safari 可以通过在 *开发*-*实验性功能* 打开 *ImageBitmap 和 OffscreenCanvas* 开启 `OffscreenCanvas` 和 `ImageBitmapRenderingContext`，尽管可以在 `window` 中访问到 `OffscreenCanvasRenderingContext2D` 构造函数，但是其仍不支持 `OffscreenCanvas.getContext('2d')`。
+:::
+
+下面的组件会显示你正在浏览的浏览器对上述功能的支持情况，如果都为绿色则表示全部支持。
+
+<ClientOnly><BrowserFunctionTest /></ClientOnly>
+
+以下是创建这个环境的代码：
+
+#### OffscreenCanvas 和 ImageBitmapRenderingContext
+
+``` js {9,12,17}
+function initAdvancedCanvasContexts(width, height, parentEle, canvasElePre) {
+  const dpi = window.devicePixelRatio
+
+  const canvasEle = canvasElePre || document.createElement('canvas')
+  canvasEle.style.width = width + 'px'
+  canvasEle.style.height = height + 'px'
+  canvasEle.width = width * dpi
+  canvasEle.height = height * dpi
+  const ctx = canvasEle.getContext('bitmaprenderer')
+  canvasElePre || parentEle.appendChild(canvasEle)
+
+  const canvasOff = new OffscreenCanvas(width * dpi, height * dpi)
+  const ctxOff = canvasOff.getContext('2d')
+  ctxOff.scale(dpi, dpi)
+
+  ctx._paintFromOffscreen = function () {
+    this.transferFromImageBitmap(canvasOff.transferToImageBitmap())
+  }
+  return [ctx, ctxOff, canvasEle, canvasOff]
+}
+```
+
+#### 针对传统浏览器
+
+``` js {9,12,19,20,21}
+function initClassicCanvasContexts(width, height, parentEle, canvasElePre) {
+  const dpi = window.devicePixelRatio
+
+  const canvasEle = canvasElePre || document.createElement('canvas')
+  canvasEle.style.width = width + 'px'
+  canvasEle.style.height = height + 'px'
+  canvasEle.width = width * dpi
+  canvasEle.height = height * dpi
+  const ctx = canvasEle.getContext('2d')
+  canvasElePre || parentEle.appendChild(canvasEle)
+
+  const canvasOff = document.createElement('canvas')
+  canvasOff.width = width * dpi
+  canvasOff.height = height * dpi
+  const ctxOff = canvasOff.getContext('2d')
+  ctxOff.scale(dpi, dpi)
+
+  ctx._paintFromOffscreen = function () {
+    this.clearRect(0, 0, width * dpi, height * dpi)
+    this.drawImage(canvasOff, 0, 0)
+    ctxOff.clearRect(0, 0, width, height)
+  }
+  return [ctx, ctxOff, canvasEle, canvasOff]
+}
+```
+
+以上两个函数都接受 4 个参数：画布**宽**，**高**，**父元素**和**主画布元素**，最后两个参数是可选的，两种方法的主要区别已经标出。  
+函数将完成画布、离屏元素、离屏画布的创建和针对视网膜屏幕的处理，并保证主画布元素挂载到了父元素上。  
+随后在主画布 `ctx` 上新建了一个名为 `_paintFromOffscreen` 的方法，以此将两个画布相关联。  
+
+在我们的粒子系统中，是否使用离屏渲染带来的性能影响并不是很大，当粒子数量非常多时，大量的 CPU 时间都花费在了计算**引力**和**碰撞**上。  
+
+本文将不此进行展开，以后可能会有专门文章对算法优化和多线程计算等进行讨论。
+
+## 附录
+
+以下给出本文涉及到的组件的源代码
+
+### Vector2
+
+<<<@/source/.vuepress/components/particle-system/vector2.js
+
+### Particle
+
+<<<@/source/.vuepress/components/particle-system/particle.js
+
+### ParticleSystem
+
+<<<@/source/.vuepress/components/particle-system/system.js
+
+### Effectors
+
+<<<@/source/.vuepress/components/particle-system/effector.js
+
+### 其他帮助类
+
+<<<@/source/.vuepress/components/particle-system/others.js
+
+<Valine></Valine>

@@ -16,6 +16,7 @@ function standardNormalDistribution() {
     }
   }()
 }
+
 function NormalDistribution(off, con) {
   const standard = standardNormalDistribution()
   return standard * con + off
@@ -23,19 +24,24 @@ function NormalDistribution(off, con) {
 
 export default class ParticleSystem {
   static G = 6.67408
-  /**
-   * @param {CanvasRenderingContext2D} ctx 
-   */
+
   constructor(ctx, w, h) {
-    this.w = w || ctx.canvas.width
-    this.h = h || ctx.canvas.height
+    this.w = w || ctx.canvas.width / window.devicePixelRatio
+    this.h = h || ctx.canvas.height / window.devicePixelRatio
+
     this.workers = []
     /** @type {Particle[]} */
     this.particles = []
     /** @type {CanvasRenderingContext2D} */
     this.context = ctx
-    this.pauseSignal = false
     this.effectors = []
+
+    this.pauseSignal = false
+    this.disableDevour = false
+    this.disableGravitation = false
+
+    this.lastRenderTime = new Float64Array(512)
+    this.renderInterval = 0
   }
 
   emit(particle) {
@@ -69,7 +75,6 @@ export default class ParticleSystem {
     if (!this.particles[index] || !this.particles[index].dead) {
       return
     }
-    // this.particles.splice(index, 1)
     this.particles[index] = this.particles[this.particles.length - 1]
     this.particles.pop()
   }
@@ -113,7 +118,7 @@ export default class ParticleSystem {
   }
 
   universalGravitation() {
-    this.particles.forEach((p, index) => {
+    this.particles.forEach((p) => {
 
       const totalGravitation = this.particles.reduce((pv, cv, innerIndex) => {
         if (p === cv) {
@@ -141,18 +146,44 @@ export default class ParticleSystem {
     if (this.pauseSignal) return
 
     this.applyEffectors()
-    this.devour()
-    this.universalGravitation()
+    if (!this.disableDevour) this.devour()
+    if (!this.disableGravitation) this.universalGravitation()
     this.kinematics(dt)
   }
 
+  recordRenderTime() {
+    const now = performance.now()
+    const zeroIndex = this.lastRenderTime.findIndex(v => v === 0)
+    const actualLength = zeroIndex === -1 ? this.lastRenderTime.length : zeroIndex + 1
+
+    if (zeroIndex === -1) {
+      this.lastRenderTime.set(this.lastRenderTime.subarray(1))
+      this.lastRenderTime.set([now], this.lastRenderTime.length - 1)
+    }
+    else {
+      this.lastRenderTime.set([now], zeroIndex)
+    }
+
+    if (actualLength < 100) {
+      this.renderInterval = (now - this.lastRenderTime[0]) / actualLength
+    }
+    else {
+      this.renderInterval = (now - this.lastRenderTime[actualLength - 100]) / 100
+    }
+  }
+
   render() {
-
     for (const p of this.particles) {
-
       if (p.outOfScreen() || !p.visible) continue
-
       p.render(this.context)
     }
+  }
+
+  complexRender() {
+    for (const p of this.particles) {
+      p.complexRender(this.context)
+    }
+
+    this.recordRenderTime()
   }
 }

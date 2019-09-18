@@ -13,7 +13,4 @@
 </template>
 
 <style lang="stylus">
-  .tag:not(:last-child)::after
-    content: " | "
-    color: #999
 </style>
