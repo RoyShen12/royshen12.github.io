@@ -829,22 +829,57 @@ function initClassicCanvasContexts(width, height, parentEle, canvasElePre) {
 
 ### Vector2
 
+<details>
+<summary>
+  <h4>展开</h4>
+</summary>
+
 <<<@/source/.vuepress/components/particle-system/vector2.js
+
+</details>
 
 ### Particle
 
+<details>
+<summary>
+  <h4>展开</h4>
+</summary>
+
 <<<@/source/.vuepress/components/particle-system/particle.js
+
+</details>
 
 ### ParticleSystem
 
+<details>
+<summary>
+  <h4>展开</h4>
+</summary>
+
 <<<@/source/.vuepress/components/particle-system/system.js
+
+</details>
 
 ### Effectors
 
+<details>
+<summary>
+  <h4>展开</h4>
+</summary>
+
 <<<@/source/.vuepress/components/particle-system/effector.js
+
+</details>
 
 ### 其他帮助类
 
+<details>
+<summary>
+  <h4>展开</h4>
+</summary>
+
 <<<@/source/.vuepress/components/particle-system/others.js
+
+</details>
 
 <Valine></Valine>

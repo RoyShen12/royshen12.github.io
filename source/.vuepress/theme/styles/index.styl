@@ -41,3 +41,27 @@
 code[class*="language-"], pre[class*="language-"] {
   font-family: bettercode !important;
 }
+
+details {
+  background-color: #eee;
+  border-radius: 2px;
+  margin: 1.6em 0;
+  padding: 1.6em;
+}
+
+summary {
+  cursor: pointer;
+  padding: 1.6rem;
+  margin: -1.6rem;
+  outline: none;
+  &::after {
+    content: "...";
+  }
+  &:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  h4 {
+    display: inline-block;
+    margin: 0;
+  }
+}
