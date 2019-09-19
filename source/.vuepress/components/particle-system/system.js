@@ -1,6 +1,9 @@
 import Particle from './particle'
 import Vector2 from './vector2'
 
+/**
+ * 标准正态分布
+ */
 function standardNormalDistribution() {
   const numberPool = []
   return function () {
@@ -17,6 +20,11 @@ function standardNormalDistribution() {
   }()
 }
 
+/**
+ * 正态分布
+ * @param {number} off 期望分布顶点离开数轴中心的偏移量
+ * @param {number} con 相对标准正态分布的系数
+ */
 function NormalDistribution(off, con) {
   const standard = standardNormalDistribution()
   return standard * con + off
@@ -120,7 +128,7 @@ export default class ParticleSystem {
   universalGravitation() {
     this.particles.forEach((p) => {
 
-      const totalGravitation = this.particles.reduce((pv, cv, innerIndex) => {
+      const totalGravitation = this.particles.reduce((pv, cv) => {
         if (p === cv) {
           return pv
         }

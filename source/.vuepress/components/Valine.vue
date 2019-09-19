@@ -6,7 +6,6 @@
 export default {
   name: 'Valine',
   mounted() {
-    // require window
     const Valine = require('valine')
     if (typeof window !== 'undefined') {
       this.window = window

@@ -53,7 +53,7 @@ class Vector2 {
 ```
 为向量添加基础的运算方法
 ``` js
-// 取单位向量
+//  向量的标准化（取单位向量）
 normalize() {
   const inv = 1 / this.length()
   return new Vector2(this.x * inv, this.y * inv)
@@ -81,7 +81,7 @@ dot(v) {
 }
 ```
 ::: warning
-注意，所有的运算方法都是不可变的（**Immutable**），也就是说执行方法后自身[和参与运算的其他向量]不会发生改变。
+注意，所有的运算方法都是不可变的（**Immutable**），也就是说执行方法后自身[ *和参与运算的其他向量* ]不会发生改变。
 :::
 
 为其添加**静态**属性和方法
@@ -95,9 +95,9 @@ Vector2.unit = function (x, y) {
 
 ## 粒子的抽象 <Badge text="Particle" />
 
-粒子的位置，速度，加速度都能抽象成一个 Vector2。
+粒子的**位置**，**速度**，**加速度**都能抽象成一个 `Vector2`。
 
-有了二维向量，就可以着手构建粒子，在运动模拟中，我们将忽略一个粒子的大多数特征，如惯量、力矩、自旋，由此可以得到这个简略的粒子类：
+有了二维向量，就可以着手构建粒子，在运动模拟中，我们将忽略一个粒子的大多数特征，如惯量、力矩、自旋，添加渲染中必要的**颜色**属性，并得到一个非常简洁的粒子类：
 ``` js
 class Particle {
   constructor(position, velocity, color, mass) {
@@ -165,14 +165,19 @@ p.velocity = p.velocity.add( acceleration.multiply(dt) )
 通常画布元素 `canvasEle` 都是以 Html 标签的形式存在于文档流中，这样一来，我们对它的画布 `ctx` 的所有更新、操作都会实时地被浏览器实时呈现到你的显示器上。  
 
 ::: tip
-本文中的所有画布在创建时都会读取 `window.devicePixelRatio` 并对画布进行缩放  
-在 `devicePixelRatio` 为 2 的设备上，宽高都为 400 的 canvas ，实际内部的画布尺寸是 800 * 800。  
+本文中的所有画布在创建时都会先读取 `window.devicePixelRatio` 并对画布进行缩放。  
+`window.devicePixelRatio` 是一个浏览器内置的常量，表示当前显示设备的缩放比例，在高分辨率设备上这个值通常是 2 或 3。  
+
+例如在 `devicePixelRatio` 为 2 的视网膜屏设备上，有一宽高都为 `400px` 的 canvas ，实际内部的画布尺寸是 `800px * 800px`。  
+
 如不做处理，视网膜屏和移动设备上的 canvas 将会一片模糊。
 :::
 
 有些情况下，它也可以在某些时候动态地使用 `document.createElement('canvas')` 创建而不挂载到文档中，这样的仅存活在内存中的 `canvasEle` 可以帮助解决一些特殊的问题，比如转换图片为 base64 编码，或者给另一个 `ctx` 加速。  
 
 Canvas 具有很多基本的绘图、变换、图像处理和像素控制方法，我们将仅用到 `beginPath`, `arc`, `closePath`, `fill` 这几个函数，以及 `fillStyle` 这个属性。  
+
+以下是这几个方法和属性的定义：
 
 ### beginPath 和 closePath
 
@@ -230,9 +235,13 @@ render(ctx) {
 }
 ```
 
+::: tip
+`toRgba` 是 Color 的一个方法，接受一个 0 ~ 1 的参数表示 $α$ 通道值，返回一个 rgba 字符串。
+:::
+
 ## 试一试，模拟最基本的粒子运动过程
 
-基于上述的理论，这里事先准备好了所需的工具和类，亲自动手试试吧！  
+基于上述的理论，也有了 `render` 方法，这里事先准备好了所需的工具和类，亲自动手试试吧！  
 
 <CanvasPlayground
 desc="（这是一个 45° 平抛的例子，尝试修改起始位置、速度或加速度，观察变化）"
@@ -274,7 +283,9 @@ $$F = G \dfrac {m_{1}m_{2}}{r^{2}}$$
 ### 引力的简化和计算
 
 为了适应我们创建的模型，现实中的一些常数需要在计算机系统中适当地缩放，先前我们在通过粒子的质量计算粒子的体积时已经使用了这样的方法。  
-现实生活中我们很难察觉引力的作用，因为它太小了，为了使得引力的效应变得清晰可见，我们必须让万有引力常数变得足够大：  
+
+现实生活中我们很难察觉引力的作用，因为它太小了，为了使得引力的效应变得清晰可见，我们必须让万有引力常数变得足够大。  
+
 在此我们把常数 $G$ 放大：  
 
 ``` js
@@ -412,37 +423,44 @@ Particle.RocheLimitPow2 = function (a, b) {
 ```
 
 碰撞的检测方式是对粒子进行简单的二次遍历。  
+
 ::: tip
 由于在某些情况下粒子会超出画布范围，但我们仍需要对其进行模拟，所以在此我们不会使用 *四叉树* 法进行碰撞检测。
 :::
+
 举例说明，设第一层遍历到 `p` ，第二层遍历到 `pOther` 时：  
-当 `Particle.distancePow2(p, pOther) < Particle.RocheLimitPow2(p, pOther)` 时，变认为碰撞发生。  
+当 `Particle.distancePow2(p, pOther) < Particle.RocheLimitPow2(p, pOther)` 时，便认为碰撞发生。  
 
 ### 碰撞后的处理
 
-一般情况下，计算机粒子模拟时会有以下几种碰撞时的处理：
+一般情况下，计算机粒子模拟有以下几种碰撞时的处理方法：
 
 - 完全球弹性碰撞
 - 完全矩形弹性碰撞
 - 互相穿过
 - 以某种方式合并
 
-既然引入了洛希极限和引力，在本系统中我们将采用最后一种方式处理粒子间的碰撞  
+既然引入了洛希极限和引力，在本系统中我们将采用最后一种方式处理粒子间的碰撞：  
 
-**我们设定系统中的粒子过分接近时，会表现出重的那个粒子吸收轻的粒子的现象**  
+**我们设定系统中的粒子过分接近时，重的那个粒子会表现出吸收轻的粒子的行为**  
 
-即重的粒子完全获得轻粒子的**质量**和**动量**，并导致轻粒子死去。
+即重的粒子完全获得轻粒子的**质量**和**动量**，并导致轻粒子“死去”。
 
-下面直接给出 "吸收" 的代码：
+下面直接给出代码：
 
 ``` js
 class Particle {
 ...
   devourOther(pOther) {
     if (pOther.mass < this.mass && !this.dead && !pOther.dead) {
-      this.velocity = this.velocity.multiply(this.mass).add(pOther.velocity.multiply(pOther.mass)).divide(this.mass + pOther.mass)
+      this.velocity = this.velocity
+        .multiply(this.mass)
+        .add(pOther.velocity.multiply(pOther.mass))
+        .divide(this.mass + pOther.mass)
+
       this.mass += pOther.mass
       this.radius = Particle.massToRadius(this.mass)
+
       this.color = this.color.add(pOther.color)
       pOther.dead = true
     }
@@ -453,13 +471,17 @@ class Particle {
 
 可以注意到，重的粒子 "吸收" 过于靠近的轻的粒子这一过程是符合**动量守恒**的。
 
+::: tip
+粒子吸收时颜色也会发生合并
+:::
+
 ## 粒子系统 <Badge text="ParticleSystem" />
 
-现在我们要引入**粒子系统**的概念  
+我们完成了**粒子**类的构建，现在我们要引入**粒子系统**的概念。  
 
-粒子系统用来模拟大量的粒子，抽象一些粒子间的运算和状态变化，降低代码复杂度和耦合度。
+粒子系统用来管理并模拟大量的粒子，抽象一些粒子间的运算和状态变化，降低代码复杂度和耦合度。
 
-我们要构建的粒子系统包含以下几个部分：
+我们的粒子系统包含以下几个部分：
 
 - 粒子的容器
 - 万有引力模拟
@@ -477,24 +499,15 @@ class Particle {
 ``` js
 class ParticleSystem {
   static G = 6.67408
+
   constructor(ctx, w, h) {
     this.w = w || ctx.canvas.width / window.devicePixelRatio
     this.h = h || ctx.canvas.height / window.devicePixelRatio
     this.particles = []
     this.context = ctx
     this.effectors = []
-
-    this.pauseSignal = false // 暂停信号
-    this.disableDevour = false // 禁用碰撞
-    this.disableGravitation = false // 禁用引力
-
-    // 渲染耗时记录
-    this.lastRenderTime = new Float64Array(512)
-    this.renderInterval = 0
   }
   simulate(dt) {
-    if (this.pauseSignal) return
-
     this.applyEffectors()
     this.devour()
     this.universalGravitation()
@@ -502,36 +515,42 @@ class ParticleSystem {
   }
   render() {
     for (const p of this.particles) {
-      if (p.outOfScreen() || !p.visible) continue
       p.render(this.context)
     }
   }
 }
 ```
 
-上述的代码创建了粒子系统的基础框架，构造函数接受 1 个或 3 个参数，**CanvasRenderingContext2D** 类型的 `ctx` 是粒子系统依赖的渲染上下文，`w` 和 `h` 是粒子的宽高范围，如果未指定则取 `ctx` 的**逻辑**宽高，目前未使用到。  
+上述的代码创建了粒子系统的基础框架。  
+
+构造函数接受 1 个或 3 个参数：**CanvasRenderingContext2D** 类型的 `ctx` 是粒子系统依赖的渲染上下文，`w` 和 `h` 是粒子的宽高范围，如果未指定则取 `ctx` 的**逻辑**宽高（*目前未使用到*）。  
 
 ### 核心逻辑
+
+#### render
 
 `render` 方法完成一次全体粒子的绘制。  
 ::: warning
 `render` 没有主动刷新 `ctx` ，如果不在外部使用 `ctx.clearRect` 方法刷新画布则会出现重影。  
 之所以这么做是因为之后使用 `OffscreenCanvas` 等技术优化画布速度后无需再做刷新。
 :::
+
+#### simulate
+
 `simulate` 方法完成一次全体粒子的运动及其他模拟和操作，参数 `dt` 为时间间隔量，内部涉及了 4 个方法，我们逐一分析：
 
 ### applyEffectors
 
 ``` js
 applyEffectors() {
-  for (const effector of this.effectors) {
-    const apply = effector.apply
-    for (const p of this.particles) apply(p)
-  }
+  for (const effector of this.effectors)
+    for (const p of this.particles)
+      effector.apply(p)
 }
 ```
-`applyEffectors` 方法计算可插拔的特效。  
-`effectors` 是一个用于存放效果插件的容器，每个插件都有 `apply` 方法，其接收一个参数 `p: Particle`。  
+`applyEffectors` 方法逐个计算效果器。  
+
+`effectors` 是一个用于存放效果器插件的容器，每个插件都有 `apply` 方法，其接收一个参数 `p: Particle`。  
 方法将遍历所有插件，并将效果应用到每个粒子上。
 
 ### devour
@@ -543,8 +562,8 @@ devour() {
 
     particlesRef
       .filter((pOther, innerIndex) => {
-        if (p.mass <= pOther.mass) return
-        if (p === pOther) return
+        if (p.mass <= pOther.mass) return false
+        if (p === pOther) return false
 
         const canEat = Particle.distancePow2(p, pOther) < Particle.RocheLimitPow2(p, pOther)
         if (canEat) {
@@ -651,13 +670,15 @@ for (let i = 0; i < 100; i++) {
 
 ## 弹性围墙
 
-目前为止还有一点比较糟糕：粒子很容易跑出画布的范围，然后我们就看不见它们了  
+目前为止还有一点比较糟糕：粒子很容易跑出画布的范围，然后我们就看不见它们了。
+
 我们在粒子系统中预留了名为 `effectors` 的效果插件容器，现在我们可以着手构建我们的第一个插件：**弹性盒室**
 
 ``` js
 class ChamberBox {
   constructor(x1, y1, x2, y2, elasticCoefficient) {
     elasticCoefficient = elasticCoefficient || 1
+
     this.apply = particle => {
       if (particle.position.x - particle.radius < x1 || particle.position.x + particle.radius > x2) {
         particle.velocity.x = -1 * elasticCoefficient * particle.velocity.x
@@ -672,7 +693,8 @@ class ChamberBox {
 
 `ChamberBox` 是一个类，实例只有一个函数 `apply`，接受一个 `Particle` 类型参数 `particle` ——符合 `effectors` 的规范。  
 
-简单来说，`ChamberBox` 的作用就是让碰到内壁的粒子翻转该方向的速度分量。可选的 `elasticCoefficient` 参数可以传入小于 1 的数，实际上它就是围墙的**弹性系数**，当未传递或传入 1 时，围墙是完全弹性的。
+简单来说，`ChamberBox` 的作用就是让碰到内壁的粒子翻转该方向的速度分量。  
+可选的 `elasticCoefficient` 参数可以传入小于 1 的数，实际上它就是围墙的**弹性系数**，当未传递或传入 1 时，围墙是完全弹性的。
 
 ## 外部场
 
@@ -695,12 +717,22 @@ export class Field {
 (position: Vector2) => Vector2
 ```
 
-即 `fieldAcc` 接受每个粒子的**当前位置**矢量，并给出这个位置的**场矢量**，施加于此粒子。  
+实际上 `fieldAcc` 本质上是一个 Vector2 到 Vector2 的映射 $f$：$Vector2 \xrightarrow{f} Vector2$。
+即 `fieldAcc` 接受每个粒子的**当前位置矢量**，并给出这个位置的**场矢量**，施加于此粒子。  
 
 一个最简单的粒子就是竖直向下的均匀场（重力）了：
 
 ``` js
 const Gravity = new Field(0.01, () => new Vector2(0, 9.8))
+```
+
+当然也可以构造复杂的向心漩涡场：
+
+``` js
+const Vortex = new Field(0.01, position => {
+  const center = new Vector2(200, 200)
+  return center.subtract(position).multiply(random(.3, .6))
+})
 ```
 
 ::: tip
@@ -748,11 +780,11 @@ for (let i = 0; i < 300; i++) {
 这样的方式避免了一次繁重的图像拷贝，并且因为 ImageBitmap 是一种 **GPU** 资源，绘图的速度也被缩短。
 
 ::: tip
-Firefox 可以通过在 *about:config* 将 gfx.offscreencanvas.enabled 选项设置为 true 开启 `OffscreenCanvas`，但其仍然只支持 WebGL。
+Firefox 目前 *(v69.0)* 可以通过在 *about:config* 将 gfx.offscreencanvas.enabled 选项设置为 true 开启 `OffscreenCanvas`，但其仍然只支持 WebGL。
 :::
 
 ::: tip
-Safari 可以通过在 *开发*-*实验性功能* 打开 *ImageBitmap 和 OffscreenCanvas* 开启 `OffscreenCanvas` 和 `ImageBitmapRenderingContext`，尽管可以在 `window` 中访问到 `OffscreenCanvasRenderingContext2D` 构造函数，但是其仍不支持 `OffscreenCanvas.getContext('2d')`。
+Safari 目前 *(12.1.2)* 可以通过在 *开发*-*实验性功能* 打开 *ImageBitmap 和 OffscreenCanvas* 开启 `OffscreenCanvas` 和 `ImageBitmapRenderingContext`，尽管可以在 `window` 中访问到 `OffscreenCanvasRenderingContext2D` 构造函数，但是其仍不支持 `OffscreenCanvas.getContext('2d')`。
 :::
 
 下面的组件会显示你正在浏览的浏览器对上述功能的支持情况，如果都为绿色则表示全部支持。
@@ -825,7 +857,7 @@ function initClassicCanvasContexts(width, height, parentEle, canvasElePre) {
 
 ## 附录
 
-以下给出本文涉及到的组件的源代码
+本文涉及到的源代码
 
 ### Vector2
 
