@@ -1,4 +1,5 @@
 import Vector2 from './vector2'
+import { Color } from './others'
 
 export default class Particle {
   static distancePow2(a, b) {
@@ -11,10 +12,22 @@ export default class Particle {
     return Math.pow((a.radius + b.radius) * 1.0134, 2)
   }
   constructor(position, velocity, color, mass, stasis = false, obWidth = 960, obHeight = 960) {
+    /** @type {Vector2} */
     this.position = position
+
+    /** @type {Vector2} */
+    this.lastPosition = null
+
+    /** @type {Vector2} */
     this.velocity = velocity
+
+    /** @type {Vector2} */
     this.acceleration = Vector2.zero
+
+    /** @type {Color} */
     this.color = color
+
+    /** @type {number} */
     this.mass = mass
     this.radius = Particle.massToRadius(mass)
 
@@ -63,6 +76,16 @@ export default class Particle {
     }
   }
 
-  renderPath() {
+  renderPath(ctx) {
+    if (this.lastPosition) {
+      ctx.save()
+      ctx.lineWidth = 1
+      ctx.strokeStyle = this.color.toRgba(.5)
+      ctx.beginPath()
+      ctx.moveTo(this.lastPosition.x, this.lastPosition.y)
+      ctx.lineTo(this.position.x, this.position.y)
+      ctx.stroke()
+      ctx.restore()
+    }
   }
 }

@@ -15,6 +15,9 @@ export default class Vector2 {
   length() {
     return Math.sqrt(this.x * this.x + this.y * this.y)
   }
+  copy() {
+    return new Vector2(this.x, this.y)
+  }
   normalize() {
     var inv = 1 / this.length()
     return new Vector2(this.x * inv, this.y * inv)

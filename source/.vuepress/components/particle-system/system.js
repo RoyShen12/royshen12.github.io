@@ -33,15 +33,21 @@ function NormalDistribution(off, con) {
 export default class ParticleSystem {
   static G = 6.67408
 
-  constructor(ctx, w, h) {
+  constructor(ctx, ctxPath, w, h) {
     this.w = w || ctx.canvas.width / window.devicePixelRatio
     this.h = h || ctx.canvas.height / window.devicePixelRatio
 
     this.workers = []
+
     /** @type {Particle[]} */
     this.particles = []
+
     /** @type {CanvasRenderingContext2D} */
     this.context = ctx
+
+    /** @type {CanvasRenderingContext2D} */
+    this.contextPath = ctxPath
+
     this.effectors = []
 
     this.pauseSignal = false
@@ -50,6 +56,8 @@ export default class ParticleSystem {
 
     this.lastRenderTime = new Float64Array(512)
     this.renderInterval = 0
+
+    this.drawPath = false
   }
 
   emit(particle) {
@@ -93,6 +101,7 @@ export default class ParticleSystem {
         particle.acceleration = particle.velocity = Vector2.zero
         continue
       }
+      particle.lastPosition = particle.position.copy()
       particle.position = particle.position.add(particle.velocity.multiply(dt))
       particle.velocity = particle.velocity.add(particle.acceleration.multiply(dt))
     }
@@ -182,8 +191,8 @@ export default class ParticleSystem {
 
   render() {
     for (const p of this.particles) {
-      if (p.outOfScreen() || !p.visible) continue
-      p.render(this.context)
+      if (!p.outOfScreen() && p.visible) p.render(this.context)
+      if (this.drawPath && this.contextPath) p.renderPath(this.contextPath)
     }
   }
 

@@ -853,7 +853,47 @@ function initClassicCanvasContexts(width, height, parentEle, canvasElePre) {
 
 在我们的粒子系统中，是否使用离屏渲染带来的性能影响并不是很大，当粒子数量非常多时，大量的 CPU 时间都花费在了计算**引力**和**碰撞**上。  
 
-本文将不此进行展开，以后可能会有专门文章对算法优化和多线程计算等进行讨论。
+本文将不此进行展开，以后可能会有专门文章对算法优化和多线程计算等进行讨论。  
+
+## 一些好玩的例子
+
+### 三体运动
+
+<CanvasPlayground
+desc="（三体运动）"
+env="function initTridationalCanvas(width, height, parentEle) {
+  while (parentEle.children.length \\r 1) {
+   parentEle.removeChild( parentEle.lastChild )
+  }
+  const dpi = window.devicePixelRatio
+  const canvasEle = document.createElement('canvas')
+  canvasEle.style.zIndex = '4'
+  canvasEle.style.position = 'absolute'
+  canvasEle.style.transform = `translate(-${width + 2}px, -1px)`
+  // canvasEle.style.transform = `translate(-1px, -${height + 1}px)`
+  canvasEle.style.width = width + 'px'
+  canvasEle.style.height = height + 'px'
+  canvasEle.width = width * dpi
+  canvasEle.height = height * dpi
+  const ctx = canvasEle.getContext('2d')
+  ctx.scale(dpi, dpi)
+  parentEle.appendChild(canvasEle)
+  return [ctx]
+}
+const [ctxBg] = initTridationalCanvas(__width, __height, canvasParentEle)
+"
+js="const ps = new ParticleSystem(ctx, ctxBg), dt = 0.05
+ps.drawPath = true
+ps.effectors.push(new ChamberBox(0, 0, ps.w, ps.h, 1))\n
+ps.emit( new Particle( new Vector2(145, 102), new Vector2(0, 0), Color.random(), 1000 ) )
+ps.emit( new Particle( new Vector2(125, 102), new Vector2(0, -20), Color.random(), 40 ) )
+//ps.emit( new Particle( new Vector2(225, 142), new Vector2(-5, 2), Color.random(), 1200 ) )\n
+!(function loop() {
+  ps.simulate(dt)
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
+  ps.render()
+  hdl = requestAnimationFrame(loop)
+}())"></CanvasPlayground>
 
 ## 附录
 
